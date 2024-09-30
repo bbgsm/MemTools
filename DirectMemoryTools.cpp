@@ -1,6 +1,8 @@
+#ifdef _WIN32 // Windows
 #include "DirectMemoryTools.h"
 #include <winsock2.h>
 #include <windows.h>
+
 #include <cstdio>
 #include <future>
 #include <psapi.h>
@@ -12,11 +14,11 @@
 
 HANDLE hProcess;
 
-ulong DirectMemoryTools::memRead(void *buff, ulong len, Addr addr, offset off) {
+mulong DirectMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
     return ReadProcessMemory(hProcess, (LPVOID)(addr + off), buff, len, nullptr);
 }
 
-ulong DirectMemoryTools::memWrite(void *buff, ulong len, Addr addr, offset off) {
+mulong DirectMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off) {
     return WriteProcessMemory(hProcess, (LPVOID)(addr + off), buff, len, nullptr);
 }
 
@@ -139,7 +141,7 @@ Handle DirectMemoryTools::createScatter() {
     return nullptr;
 }
 
-void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, ulong len, Addr addr, offset off) {
+void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
     readV(buff, len, addr, off);
 }
 
@@ -148,3 +150,176 @@ void DirectMemoryTools::executeReadScatter(Handle handle) {
 
 void DirectMemoryTools::closeScatterHandle(Handle handle) {
 }
+
+#elifdef LINUX // Linux
+#include <fstream>
+#include <sstream>
+#include "DirectMemoryTools.h"
+#include <unistd.h>
+#include <sys/uio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <cstdio>
+#include <future>
+#include <dirent.h>
+#include <cstring>
+#include <sys/ptrace.h>
+#include <sys/wait.h>
+#include <vector>
+
+#define DMA_DEBUG false
+
+pid_t hProcess;
+
+
+mulong DirectMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
+    memset(buff, 0, len);
+    Addr lastAddr = addr + off;
+    iovec iov_ReadBuffer{}, iov_ReadOffset{};
+    iov_ReadBuffer.iov_base = buff;
+    iov_ReadBuffer.iov_len = len;
+    iov_ReadOffset.iov_base = (void *) lastAddr;
+    iov_ReadOffset.iov_len = len;
+    long int size = syscall(SYS_process_vm_readv, processID, &iov_ReadBuffer, 1, &iov_ReadOffset, 1, 0);
+    return size == -1 ? 0 : size;
+}
+
+mulong DirectMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off) {
+    iovec iov_WriteBuffer{}, iov_WriteOffset{};
+    iov_WriteBuffer.iov_base = buff;
+    iov_WriteBuffer.iov_len = len;
+    iov_WriteOffset.iov_base = (void *) (addr + off);
+    iov_WriteOffset.iov_len = len;
+    // 大小
+     long int size =  syscall(SYS_process_vm_writev, processID, &iov_WriteBuffer, 1, &iov_WriteOffset, 1, 0);
+     return size == -1 ? 0 : size;
+}
+
+DirectMemoryTools::~DirectMemoryTools() {
+    DirectMemoryTools::close();
+}
+
+bool DirectMemoryTools::init(std::string bm) {
+    MemoryToolsBase::init();
+    int pid = this->getPID(bm);
+    if (pid > 0) {
+        hProcess = pid;
+        processID = pid;
+        processName = bm;
+        initModuleRegions();
+        initMemoryRegions();
+        baseModule = getModule(bm);
+        return true;
+    }
+    return false;
+}
+
+void DirectMemoryTools::close() {
+}
+
+
+std::vector<PProcess> DirectMemoryTools::getProcessList() {
+    std::vector<PProcess> processes;
+    DIR *dir = opendir("/proc");
+    if (dir == nullptr) {
+        return processes;
+    }
+    dirent *entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        if (entry->d_type == DT_DIR) {
+            int pid = atoi(entry->d_name);
+            if (pid > 0) {
+                std::string cmdline_path = "/proc/" + std::string(entry->d_name) + "/cmdline";
+                std::ifstream cmdline_file(cmdline_path);
+                if (!cmdline_file.is_open()) {
+                    continue;
+                }
+                std::string process_name;
+                std::getline(cmdline_file, process_name, '\0');
+                if (!process_name.empty()) {
+                    size_t param_pos = process_name.find(' ');
+                    if (param_pos != std::string::npos) {
+                        process_name = process_name.substr(0, param_pos);
+                    }
+                    size_t last_slash_pos = process_name.find_last_of('/');
+                    if (last_slash_pos != std::string::npos) {
+                        process_name = process_name.substr(last_slash_pos + 1);
+                    }
+                    // printf("process_name: %s\n",process_name.c_str());
+                    PProcess process;
+                    strncpy(process.processName, process_name.c_str(), sizeof(process.processName) - 1);
+                    process.processName[sizeof(process.processName) - 1] = '\0';
+                    process.processID = pid;
+                    processes.push_back(process);
+                }
+            }
+        }
+    }
+    closedir(dir);
+    return processes;
+}
+
+DirectMemoryTools::DirectMemoryTools() = default;
+
+int DirectMemoryTools::getPID(std::string bm) {
+    std::vector<PProcess> processes = getProcessList();
+    for (const auto &process : processes) {
+        if (process.processName == bm) {
+            return process.processID;
+        }
+    }
+    return -1;
+}
+
+void DirectMemoryTools::initModuleRegions() {
+    std::string maps_path = std::string("/proc/") + std::to_string(hProcess) + "/maps";
+    std::ifstream maps_file(maps_path);
+    std::string line;
+    while (std::getline(maps_file, line)) {
+        std::istringstream iss(line);
+        Addr start, end;
+        char dash;
+        iss >> std::hex >> start >> dash >> end;
+        std::string perms;
+        iss >> perms;
+        if (perms.find('r') != std::string::npos) {
+            MModule mModule;
+            mModule.baseAddress = start;
+            mModule.baseSize = end - start;
+            moduleRegions.push_back(mModule);
+        }
+    }
+}
+
+void DirectMemoryTools::initMemoryRegions() {
+    std::string maps_path = std::string("/proc/") + std::to_string(hProcess) + "/maps";
+    std::ifstream maps_file(maps_path);
+    std::string line;
+    while (std::getline(maps_file, line)) {
+        std::istringstream iss(line);
+        Addr start, end;
+        char dash;
+        iss >> std::hex >> start >> dash >> end;
+        std::string perms;
+        iss >> perms;
+        if (perms.find('r') != std::string::npos) {
+            memoryRegions.push_back({"", start, end - start});
+        }
+    }
+}
+
+Handle DirectMemoryTools::createScatter() {
+    return nullptr;
+}
+
+void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
+    readV(buff, len, addr, off);
+}
+
+void DirectMemoryTools::executeReadScatter(Handle handle) {
+}
+
+void DirectMemoryTools::closeScatterHandle(Handle handle) {
+}
+#endif

@@ -10,16 +10,16 @@ struct MemoryFile {
     int memType = 0;
     Addr baseAddress = 0;
     Addr endAddress = 0;
-    ulong fileIndex = 0;
-    ulong size = 0;
+    mulong fileIndex = 0;
+    mulong size = 0;
 };
 
 // 读取/写入Dump的内存
 class DumpMemoryTools : public MemoryToolsBase {
 private:
-    ulong memRead(void *buff, ulong len, Addr addr, offset off) override;
+    mulong memRead(void *buff, mulong len, Addr addr, offset off) override;
 
-    ulong memWrite(void *buff, ulong len, Addr addr, offset off) override;
+    mulong memWrite(void *buff, mulong len, Addr addr, offset off) override;
 
 public:
     ~DumpMemoryTools() override;
@@ -40,7 +40,7 @@ public:
     std::vector<MemoryFile> &getAllMemory();
 
     Handle createScatter() override;
-    void addScatterReadV(Handle handle, void *buff, ulong len, Addr addr, offset off = 0) override;
+    void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off = 0) override;
     void executeReadScatter(Handle handle) override;
     void closeScatterHandle(Handle handle) override;
 

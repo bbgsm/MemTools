@@ -8,9 +8,9 @@
 // Dma硬件读取/操作进程内存
 class DmaMemoryTools : public MemoryToolsBase {
 private:
-    ulong memRead(void *buff, ulong len, Addr addr, offset off) override;
+    mulong memRead(void *buff, mulong len, Addr addr, offset off) override;
 
-    ulong memWrite(void *buff, ulong len, Addr addr, offset off) override;
+    mulong memWrite(void *buff, mulong len, Addr addr, offset off) override;
 
 public:
     VMM_HANDLE vHandle = nullptr;
@@ -30,7 +30,7 @@ public:
     int getPID(std::string bm) override; // 获取pid
 
     Handle createScatter() override;
-    void addScatterReadV(Handle handle, void *buff, ulong len, Addr addr, offset off = 0) override;
+    void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off = 0) override;
     void executeReadScatter(Handle handle) override;
     void closeScatterHandle(Handle handle) override;
 };

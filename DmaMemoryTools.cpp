@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
@@ -28,7 +29,7 @@ struct Info1 {
 };
 
 //VMM_HANDLE vHandle;
-ulong DmaMemoryTools::memRead(void *buff, ulong len, Addr addr, offset off) {
+mulong DmaMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
     if (!isAddrValid(addr)) {
         return 0;
     }
@@ -41,7 +42,7 @@ ulong DmaMemoryTools::memRead(void *buff, ulong len, Addr addr, offset off) {
     return (read_size == len);
 }
 
-ulong DmaMemoryTools::memWrite(void *buff, ulong len, Addr addr, offset off) {
+mulong DmaMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off) {
     if (!VMMDLL_MemWrite(vHandle, processID, addr + off, static_cast<PBYTE>(buff), len)) {
         logDebug("[!] Failed to write Memory at 0x%p\n", addr + off);
         return false;
@@ -93,8 +94,7 @@ bool DmaMemoryTools::FixCr3() {
     while (true) {
         BYTE bytes[4] = {0};
         DWORD i = 0;
-        auto nt = VMMDLL_VfsReadW(vHandle, const_cast<LPWSTR>(L"\\misc\\procinfo\\progress_percent.txt"), bytes, 3, &i,
-                                  0);
+        auto nt = VMMDLL_VfsReadU(vHandle, "\\misc\\procinfo\\progress_percent.txt", bytes, 3, &i,0);
         if (nt == VMMDLL_STATUS_SUCCESS && atoi(reinterpret_cast<LPSTR>(bytes)) == 100) break;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -113,7 +113,7 @@ bool DmaMemoryTools::FixCr3() {
     const size_t buffer_size = cbSize1;
     std::unique_ptr<BYTE[]> bytes(new BYTE[buffer_size]);
     DWORD j = 0;
-    auto nt = VMMDLL_VfsReadW(vHandle, const_cast<LPWSTR>(L"\\misc\\procinfo\\dtb.txt"), bytes.get(), buffer_size - 1,
+    auto nt = VMMDLL_VfsReadU(vHandle, "\\misc\\procinfo\\dtb.txt", bytes.get(), buffer_size - 1,
                               &j, 0);
     if (nt != VMMDLL_STATUS_SUCCESS) return false;
 
@@ -258,17 +258,15 @@ void DmaMemoryTools::initModuleRegions() {
 
 void DmaMemoryTools::initMemoryRegions() {
     PVMMDLL_MAP_PTE pMemMapEntries = NULL;
-    bool result = VMMDLL_Map_GetPte(vHandle, processID, TRUE, &pMemMapEntries);
+    bool result = VMMDLL_Map_GetPteU(vHandle, processID, true, &pMemMapEntries);
     if (!result) {
         logDebug("Failed to get PTE\n");
         return;
     }
-    SYSTEM_INFO systemInfo;
-    GetSystemInfo(&systemInfo);
     for (int i = 0; i < pMemMapEntries->cMap; i++) {
         PVMMDLL_MAP_PTEENTRY memMapEntry = &pMemMapEntries->pMap[i];
         Addr baseAddress = memMapEntry->vaBase;
-        Addr baseSize = memMapEntry->cPages * systemInfo.dwPageSize;
+        Addr baseSize = memMapEntry->cPages * memPageSize;
         bool isModuleRegion = false;
         for (auto &module : moduleRegions) {
             if (baseAddress >= module.baseAddress && (baseAddress + baseSize) <= (module.baseAddress + module.
@@ -290,7 +288,7 @@ Handle DmaMemoryTools::createScatter() {
     return ScatterHandle;
 }
 
-void DmaMemoryTools::addScatterReadV(Handle handle, void *buff, ulong len, Addr addr, offset off) {
+void DmaMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
     if (!VMMDLL_Scatter_PrepareEx(handle, addr + off, len, static_cast<PBYTE>(buff), NULL)) {
         logDebug("[!] Failed to prepare scatter read at 0x%p\n", addr + off);
     }

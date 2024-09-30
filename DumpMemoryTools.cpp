@@ -1,10 +1,14 @@
 #include "DumpMemoryTools.h"
+
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <ranges>
 
 std::vector<MemoryFile> allMemory; // 所有内存
 
@@ -96,15 +100,19 @@ void DumpMemoryTools::parseFile(const std::string &filePath) {
 }
 
 // 读取可用内存
-ulong readAvailableMemory(Addr addr, void *buff, ulong size) {
+mulong readAvailableMemory(Addr addr, void *buff, mulong size) {
     for (const auto &memory : allMemory) {
         if (addr >= memory.baseAddress && addr <= memory.endAddress) {
-            const ulong minSize = (std::min)(size, memory.size);
+            const mulong minSize = (std::min)(size, memory.size);
             const auto fileOffset = static_cast<mlong>(addr - memory.baseAddress + memory.fileIndex);
-            ulong total = 0;
+            mulong total = 0;
             FILE *file = memory.memType == 1 ? pteFile : moduleFile;
             // 服了，file总是莫名奇妙的被关闭，只能seek失败后重新打开文件一次尝试
+#ifdef _WIN32
             if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
+#elifdef LINUX
+            if (fseeko(file, fileOffset, SEEK_SET) != 0) {
+#endif
                 logDebug("fseeki64 failed: offset: %llX addr: %llX mtmType: %d file: %llX\n", fileOffset, addr,
                       memory.memType,
                       file);
@@ -116,13 +124,17 @@ ulong readAvailableMemory(Addr addr, void *buff, ulong size) {
                     file = moduleFile;
                 }
                 // 重新尝试seek
+#ifdef _WIN32
                 if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
+#elifdef LINUX
+                if (fseeko(file, fileOffset, SEEK_SET) != 0) {
+#endif
                     return 0;
                 }
             }
             fread(buff, minSize, 1, file);
             total += minSize;
-            ulong surplus = size - minSize;
+            mulong surplus = size - minSize;
             if (surplus > 0) {
                 total += readAvailableMemory(addr + minSize, buff, surplus);
             }
@@ -134,14 +146,18 @@ ulong readAvailableMemory(Addr addr, void *buff, ulong size) {
 }
 
 // 往可用内存写入数据
-ulong writeAvailableMemory(Addr addr, void *buff, ulong size) {
+mulong writeAvailableMemory(Addr addr, void *buff, mulong size) {
     for (const auto &memory : allMemory) {
         if (addr >= memory.baseAddress && addr <= memory.endAddress) {
-            const ulong minSize = (std::min)(size, memory.size);
+            const mulong minSize = (std::min)(size, memory.size);
             const auto fileOffset = static_cast<mlong>(addr - memory.baseAddress + memory.fileIndex);
-            ulong total = 0;
+            mulong total = 0;
             FILE *file = memory.memType == 1 ? pteFile : moduleFile;
+#ifdef _WIN32
             if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
+#elifdef LINUX
+            if (fseeko(file, fileOffset, SEEK_SET) != 0) {
+#endif
                 // 服了，file总是莫名奇妙的被关闭，只能seek失败后重新打开一次文件尝试
                 logDebug("fseeki64 failed: offset: %llX addr: %llX mtmType: %d file: %llX\n", fileOffset, addr,
                        memory.memType,
@@ -154,13 +170,17 @@ ulong writeAvailableMemory(Addr addr, void *buff, ulong size) {
                     file = moduleFile;
                 }
                 // 重新尝试seek
+#ifdef _WIN32
                 if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
+#elifdef LINUX
+                if (fseeko(file, fileOffset, SEEK_SET) != 0) {
+#endif
                     return 0;
                 }
             }
             fwrite(buff, minSize, 1, file);
             total += minSize;
-            ulong surplus = size - minSize;
+            mulong surplus = size - minSize;
             if (surplus > 0) {
                 total += writeAvailableMemory(addr + minSize, buff, surplus);
             }
@@ -176,7 +196,7 @@ std::vector<PProcess> DumpMemoryTools::getProcessList() {
     return dumpProcesses;
 }
 
-ulong DumpMemoryTools::memRead(void *buff, ulong len, Addr addr, offset off) {
+mulong DumpMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
     if (!isAddrValid(addr)) {
         return 0;
     }
@@ -184,7 +204,7 @@ ulong DumpMemoryTools::memRead(void *buff, ulong len, Addr addr, offset off) {
     return readAvailableMemory(addr + off, buff, len);
 }
 
-ulong DumpMemoryTools::memWrite(void *buff, ulong len, Addr addr, offset off) {
+mulong DumpMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off) {
     std::lock_guard lock(dumpMtx);
     return writeAvailableMemory(addr + off, buff, len);
 }
@@ -291,7 +311,7 @@ Handle DumpMemoryTools::createScatter() {
     return nullptr;
 }
 
-void DumpMemoryTools::addScatterReadV(Handle handle, void *buff, ulong len, Addr addr, offset off) {
+void DumpMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
     readV(buff, len, addr, off);
 }
 

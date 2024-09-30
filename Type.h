@@ -3,7 +3,7 @@
 
 typedef signed char mbyte;
 typedef long long mlong;       //long 8
-typedef unsigned long long ulong;  //unsig long 8
+typedef unsigned long long mulong;  //unsig long 8
 typedef unsigned long long Addr;  //unsig long 8
 typedef long long offset;  // long 8
 typedef double mdouble;       //double 8

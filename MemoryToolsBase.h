@@ -64,7 +64,7 @@ public:
     const int I16LSize = sizeof(int16);
     const int ADDRSize = sizeof(Addr);
 
-    int memPageSize = 0x1000;    // 内存页大小
+    int memPageSize = 0x1000;    // 内存页大小,默认 4096
 
     int processID = -1;       // 进程pid
     std::string processName;  // 进程名
@@ -81,9 +81,9 @@ protected:
     MemoryToolsBase();
 
 private:
-    virtual ulong memRead(void *buff, ulong len, Addr addr, offset off) = 0; // 读取内存
+    virtual mulong memRead(void *buff, mulong len, Addr addr, offset off) = 0; // 读取内存
 
-    virtual ulong memWrite(void *buff, ulong len, Addr addr, offset off) = 0; // 写入内存
+    virtual mulong memWrite(void *buff, mulong len, Addr addr, offset off) = 0; // 写入内存
 
 public:
     /******** 子类必须实现的方法 *********/
@@ -93,7 +93,7 @@ public:
     virtual bool init(std::string bm) = 0;  // 初始化工具
     virtual void close() = 0;               // 关闭工具
     virtual Handle createScatter() = 0;     // 创建分散读取handle
-    virtual void addScatterReadV(Handle handle, void *buff, ulong len, Addr addr, offset off = 0) = 0; // 新增分散读取
+    virtual void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off = 0) = 0; // 新增分散读取
     virtual void executeReadScatter(Handle handle) = 0;  // 执行分散读取
     virtual void closeScatterHandle(Handle handle) = 0;  // 关闭分散读取
     virtual std::vector<PProcess> getProcessList() = 0;  // 获取进程列表
@@ -105,12 +105,12 @@ public:
 
     MModule getModule(std::string modName);  // 获取模块信息
     Addr getModuleAddr(std::string modName); // 获取模块地址
-    ulong getModuleSize(std::string modName);// 获取模块大小
+    mulong getModuleSize(std::string modName);// 获取模块大小
 
     int readI(Addr addr, offset off = 0);     // 读取int(4位)
     int16 readI16(Addr addr, offset off = 0); // 读取int16
     bool readZ(Addr addr, offset off = 0);    // 读取bool
-    ulong readUL(Addr addr, offset off = 0);  // 读取ulong(8位)
+    mulong readUL(Addr addr, offset off = 0);  // 读取ulong(8位)
     Addr readA(Addr addr, offset off = 0);    // 读取Addr(8位)
     Addr readP(Addr addr, offset off = 0);    // 读取指针
     mlong readL(Addr addr, offset off = 0);   // 读取long(8位)
@@ -120,17 +120,17 @@ public:
     char readC(Addr addr, offset off = 0);    // 读取char
     ushort readUS(Addr addr, offset off = 0); // 读取byte
 
-    ulong readV(void *buff, ulong len, Addr addr, offset off = 0); //读取指定大小的值
+    mulong readV(void *buff, mulong len, Addr addr, offset off = 0); //读取指定大小的值
 
-    ulong writeI(int value, Addr addr, offset off = 0);    // 写入int
-    ulong writeL(mlong value, Addr addr, offset off = 0);  // 写入long
-    ulong writeF(float value, Addr addr, offset off = 0);  // 写入float
-    ulong writeD(double value, Addr addr, offset off = 0); // 写入double
-    ulong writeB(mbyte value, Addr addr, offset off = 0);  // 写入byte
-    ulong writeV(void *buff, ulong len, Addr addr, offset off = 0); // 写入buffer
+    mulong writeI(int value, Addr addr, offset off = 0);    // 写入int
+    mulong writeL(mlong value, Addr addr, offset off = 0);  // 写入long
+    mulong writeF(float value, Addr addr, offset off = 0);  // 写入float
+    mulong writeD(double value, Addr addr, offset off = 0); // 写入double
+    mulong writeB(mbyte value, Addr addr, offset off = 0);  // 写入byte
+    mulong writeV(void *buff, mulong len, Addr addr, offset off = 0); // 写入buffer
 
     Addr getPointers(Addr addr, int p_size, int *offsets);    // 获取多级偏移地址
-    int getPointersValue(Addr addr, void *buff, ulong len, int p_size, ulong *offsets); // 获取多级偏移值
+    int getPointersValue(Addr addr, void *buff, mulong len, int p_size, mulong *offsets); // 获取多级偏移值
 
     static bool isAddrValid(Addr addr); // 判断内存地址是否有效
 
@@ -146,13 +146,13 @@ public:
     int searchByte(mbyte from_value, mbyte to_value);
     int searchBytes(std::string values);
     int searchString(const std::string &values);
-    int searchOffset(const mbyte *from_value, const mbyte *to_value, ulong offset, Type type, ulong len);
+    int searchOffset(const mbyte *from_value, const mbyte *to_value, mulong offset, Type type, mulong len);
 
     int memorySearch(std::string value, Type type); // 类型搜索
-    int memoryOffset(std::string value, ulong offset, Type type); // 搜索偏移
+    int memoryOffset(std::string value, mulong offset, Type type); // 搜索偏移
     int rangeMemorySearch(std::string from_value, std::string to_value, Type type); // 范围搜索
-    int rangeMemoryOffset(std::string from_value, std::string to_value, ulong offset, Type type); // 范围偏移
-    void memoryWrite(std::string value, ulong offset, Type type); // 批量往搜索结果写入数据
+    int rangeMemoryOffset(std::string from_value, std::string to_value, mulong offset, Type type); // 范围偏移
+    void memoryWrite(std::string value, mulong offset, Type type); // 批量往搜索结果写入数据
 
     void printResult() const;       // 打印搜索结果
     void printSearchRange() const;  // 打印搜索范围
@@ -164,9 +164,9 @@ public:
     /********** 搜索内存功能 ***************/
 
     /********** 持久化内存功能 ***************/
-    ulong dumpMem(Addr beginAddr, Addr endAddr, FILE *dumpfile); // 持久化内存空间数据
-    ulong dumpMem(std::string dumpModule, std::string filePath); // 持久化内存空间数据
-    ulong dumpAllMem(const std::string &dirPath);                // 持久化内存结构以及数据
+    mulong dumpMem(Addr beginAddr, Addr endAddr, FILE *dumpfile); // 持久化内存空间数据
+    mulong dumpMem(std::string dumpModule, std::string filePath); // 持久化内存空间数据
+    mulong dumpAllMem(const std::string &dirPath);                // 持久化内存结构以及数据
     /********** 持久化内存功能 ***************/
 
     int getResCount() const;   // 获取搜索的数量
