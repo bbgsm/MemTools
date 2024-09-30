@@ -151,7 +151,7 @@ void DirectMemoryTools::executeReadScatter(Handle handle) {
 void DirectMemoryTools::closeScatterHandle(Handle handle) {
 }
 
-#elifdef LINUX // Linux
+#else // Linux
 #include <fstream>
 #include <sstream>
 #include "DirectMemoryTools.h"

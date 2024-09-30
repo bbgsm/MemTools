@@ -23,7 +23,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifdef _WIN32
-
+#include <winsock2.h>
 #include <Windows.h>
 #undef EXPORTED_FUNCTION
 #define EXPORTED_FUNCTION

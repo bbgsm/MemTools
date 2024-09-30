@@ -59,7 +59,7 @@ public:
     const int DSize = sizeof(double);
     const int BSize = sizeof(mbyte);
     const int CSize = sizeof(char);
-    const int ULSize = sizeof(ulong);
+    const int ULSize = sizeof(mulong);
     const int USSize = sizeof(ushort);
     const int I16LSize = sizeof(int16);
     const int ADDRSize = sizeof(Addr);

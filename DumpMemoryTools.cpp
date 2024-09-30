@@ -1,14 +1,14 @@
 #include "DumpMemoryTools.h"
 
+#include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <mutex>
+#include <ranges>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <ranges>
 
 std::vector<MemoryFile> allMemory; // 所有内存
 
@@ -91,9 +91,8 @@ void DumpMemoryTools::parseFile(const std::string &filePath) {
         allMemory.push_back(data);
     }
     // 排序内存区域
-    std::ranges::sort(allMemory, [](const MemoryFile &a, const MemoryFile &b) {
-        return a.baseAddress < b.baseAddress;
-    });
+    std::ranges::sort(allMemory,
+                      [](const MemoryFile &a, const MemoryFile &b) { return a.baseAddress < b.baseAddress; });
     // for (auto &data : allMemory) {
     //     logDebug("module: %s start: %llX end: %llX\n", data.name, data.baseAddress, data.endAddress);
     // }
@@ -110,12 +109,11 @@ mulong readAvailableMemory(Addr addr, void *buff, mulong size) {
             // 服了，file总是莫名奇妙的被关闭，只能seek失败后重新打开文件一次尝试
 #ifdef _WIN32
             if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
-#elifdef LINUX
+#else
             if (fseeko(file, fileOffset, SEEK_SET) != 0) {
 #endif
                 logDebug("fseeki64 failed: offset: %llX addr: %llX mtmType: %d file: %llX\n", fileOffset, addr,
-                      memory.memType,
-                      file);
+                         memory.memType, file);
                 if (memory.memType == 1) {
                     pteFile = fopen(ptePath.c_str(), "r+b");
                     file = pteFile;
@@ -126,7 +124,7 @@ mulong readAvailableMemory(Addr addr, void *buff, mulong size) {
                 // 重新尝试seek
 #ifdef _WIN32
                 if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
-#elifdef LINUX
+#else
                 if (fseeko(file, fileOffset, SEEK_SET) != 0) {
 #endif
                     return 0;
@@ -155,13 +153,12 @@ mulong writeAvailableMemory(Addr addr, void *buff, mulong size) {
             FILE *file = memory.memType == 1 ? pteFile : moduleFile;
 #ifdef _WIN32
             if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
-#elifdef LINUX
+#else
             if (fseeko(file, fileOffset, SEEK_SET) != 0) {
 #endif
                 // 服了，file总是莫名奇妙的被关闭，只能seek失败后重新打开一次文件尝试
                 logDebug("fseeki64 failed: offset: %llX addr: %llX mtmType: %d file: %llX\n", fileOffset, addr,
-                       memory.memType,
-                       file);
+                         memory.memType, file);
                 if (memory.memType == 1) {
                     pteFile = fopen(ptePath.c_str(), "r+b");
                     file = pteFile;
@@ -172,7 +169,7 @@ mulong writeAvailableMemory(Addr addr, void *buff, mulong size) {
                 // 重新尝试seek
 #ifdef _WIN32
                 if (_fseeki64(file, fileOffset, SEEK_SET) != 0) {
-#elifdef LINUX
+#else
                 if (fseeko(file, fileOffset, SEEK_SET) != 0) {
 #endif
                     return 0;
