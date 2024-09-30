@@ -11,11 +11,11 @@ Windows、Linux DMA、Dump 、Direct 内存工具
 - Linux
 编译环境: Clion + cmake + Unix Makefiles, 在 Clion 的 cmake 配置中选择Unix Makefiles编译工具
 # 测试环境
-- Windows
-Windows 11 + vs2022
-- Linux
-1.Linux arm64 香橙派5 + Ubuntu 20.04
-2.Linux X64 待开发....
+#### Windows
+- Windows 11 + vs2022
+#### Linux
+- Linux arm64 香橙派5 + Ubuntu 20.04
+- Linux X64 待开发....
 # Dump的内存如何使用
 ### 使用下面CEDumpPlugin插件配合CE即可进行分析
 
