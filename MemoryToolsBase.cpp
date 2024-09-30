@@ -1,18 +1,19 @@
 #include "MemoryToolsBase.h"
 #include <cmath>
-#include <fcntl.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-#include <unistd.h>
 
 #ifdef _WIN32
 // 此头文件不要删除
 #include <winsock2.h>
 #include <windows.h>
+#else // Linux
+#include <unistd.h>
 #endif
 const char *proText = "-/|\\";
 
@@ -37,7 +38,6 @@ void MemoryToolsBase::init() {
 #else
     memPageSize = sysconf(_SC_PAGESIZE);
 #endif
-
 }
 
 void MemoryToolsBase::addSearchModule(std::string modName) {
@@ -266,7 +266,7 @@ int MemoryToolsBase::searchDword(int from_value, int to_value) {
         position = (int)(len / max * 100.0F);
         printf("[%d%%][%c]\r", position, *(proText + (position % 4)));
         for (int j = 0; j < c; j += 1) {
-            mulong u =memRead(buff, memPageSize, pmapsit->addr, j * memPageSize);
+            mulong u = memRead(buff, memPageSize, pmapsit->addr, j * memPageSize);
             for (int i = 0; i < buffSize; i += 1) {
                 if (buff[i] >= from_value && buff[i] <= to_value) {
                     cs += 1;
@@ -568,7 +568,8 @@ int MemoryToolsBase::rangeMemorySearch(std::string from_value, std::string to_va
     return cs;
 }
 
-int MemoryToolsBase::searchOffset(const mbyte *from_value, const mbyte *to_value, mulong offset, Type type, mulong len) {
+int MemoryToolsBase::searchOffset(const mbyte *from_value, const mbyte *to_value, mulong offset, Type type,
+                                  mulong len) {
     int cs = 0;
     auto *offList = new std::list<RADDR>;
     RADDR maps{0, 0};
@@ -745,7 +746,7 @@ void MemoryToolsBase::memoryWrite(std::string value, mulong offset, Type type) {
     // 迭代器
     std::list<RADDR>::iterator pmapsit;
     for (pmapsit = resultList->begin(); pmapsit != resultList->end(); ++pmapsit) {
-        if(memWrite(buff, len, pmapsit->addr, offset) != len){
+        if (memWrite(buff, len, pmapsit->addr, offset) != len) {
             printf("Write error, Addr: %llX\n", pmapsit->addr);
         }
     }
@@ -814,10 +815,10 @@ mulong MemoryToolsBase::dumpAllMem(const std::string &dirPath) {
     // 保存模块数据
     for (const auto &mModule : moduleRegions) {
         printf("Dumping module: %s size: %llX\n", mModule.moduleName, mModule.baseSize);
-        std::string baseAddressStr = addrToHex(mModule.baseAddress) + "|" + addrToHex(
-        mModule.baseAddress + mModule.baseSize);
-        std::string outStr = "m|" + std::string(mModule.moduleName) + "|" + baseAddressStr + "|" +
-        addrToHex(memoryMapOff) + "\n";
+        std::string baseAddressStr =
+        addrToHex(mModule.baseAddress) + "|" + addrToHex(mModule.baseAddress + mModule.baseSize);
+        std::string outStr =
+        "m|" + std::string(mModule.moduleName) + "|" + baseAddressStr + "|" + addrToHex(memoryMapOff) + "\n";
         fwrite(outStr.data(), 1, outStr.size(), dictTxt);
         modules.push_back({mModule.baseAddress, mModule.baseAddress + mModule.baseSize});
         mulong size = dumpMem(mModule.baseAddress, mModule.baseAddress + mModule.baseSize, m);
