@@ -68,7 +68,7 @@ int main() {
 
     // // 直接读取本机应用内存
     memoryTools = new DirectMemoryTools();
-    if (!memoryTools->init("test.exe")) {
+    if (!memoryTools->init("LANShare")) {
        printf("Failed to initialize MemoryTools\n");
     }
 

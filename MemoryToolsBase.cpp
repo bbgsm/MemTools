@@ -7,10 +7,13 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
+
+#ifdef _WIN32
 // 此头文件不要删除
 #include <winsock2.h>
 #include <windows.h>
-
+#endif
 const char *proText = "-/|\\";
 
 MemoryToolsBase::~MemoryToolsBase() {
@@ -27,9 +30,14 @@ MemoryToolsBase::~MemoryToolsBase() {
 MemoryToolsBase::MemoryToolsBase() = default;
 
 void MemoryToolsBase::init() {
+#ifdef _WIN32
     SYSTEM_INFO systemInfo;
     GetSystemInfo(&systemInfo);
     memPageSize = systemInfo.dwPageSize;
+#else
+    memPageSize = sysconf(_SC_PAGESIZE);
+#endif
+
 }
 
 void MemoryToolsBase::addSearchModule(std::string modName) {
@@ -60,7 +68,7 @@ Addr MemoryToolsBase::getPointers(Addr addr, int p_size, int *offsets) {
     return temp;
 }
 
-int MemoryToolsBase::getPointersValue(Addr addr, void *buff, ulong len, int p_size, ulong *offsets) {
+int MemoryToolsBase::getPointersValue(Addr addr, void *buff, mulong len, int p_size, mulong *offsets) {
     Addr temp = 0;
     readV(&temp, LSize, addr);
     for (int i = 0; i < p_size; i++) {
@@ -91,7 +99,7 @@ Addr MemoryToolsBase::getModuleAddr(std::string modName) {
     return 0;
 }
 
-ulong MemoryToolsBase::getModuleSize(std::string modName) {
+mulong MemoryToolsBase::getModuleSize(std::string modName) {
     for (const auto &module : moduleRegions) {
         if (modName == module.moduleName) {
             return module.baseSize;
@@ -116,8 +124,8 @@ bool MemoryToolsBase::readZ(Addr addr, offset off) {
     return readI(addr, off) > 0;
 }
 
-ulong MemoryToolsBase::readUL(Addr addr, offset off) {
-    ulong temp = 0;
+mulong MemoryToolsBase::readUL(Addr addr, offset off) {
+    mulong temp = 0;
     memRead(&temp, ULSize, addr, off);
     return temp;
 }
@@ -168,31 +176,31 @@ ushort MemoryToolsBase::readUS(Addr addr, offset off) {
     return temp;
 }
 
-ulong MemoryToolsBase::readV(void *buff, ulong len, Addr addr, offset off) {
+mulong MemoryToolsBase::readV(void *buff, mulong len, Addr addr, offset off) {
     return memRead(buff, len, addr, off);
 }
 
-ulong MemoryToolsBase::writeI(int value, Addr addr, offset off) {
+mulong MemoryToolsBase::writeI(int value, Addr addr, offset off) {
     return memWrite(&value, ISize, addr, off);
 }
 
-ulong MemoryToolsBase::writeL(mlong value, Addr addr, offset off) {
+mulong MemoryToolsBase::writeL(mlong value, Addr addr, offset off) {
     return memWrite(&value, LSize, addr, off);
 }
 
-ulong MemoryToolsBase::writeF(float value, Addr addr, offset off) {
+mulong MemoryToolsBase::writeF(float value, Addr addr, offset off) {
     return memWrite(&value, FSize, addr, off);
 }
 
-ulong MemoryToolsBase::writeD(double value, Addr addr, offset off) {
+mulong MemoryToolsBase::writeD(double value, Addr addr, offset off) {
     return memWrite(&value, DSize, addr, off);
 }
 
-ulong MemoryToolsBase::writeB(mbyte value, Addr addr, offset off) {
+mulong MemoryToolsBase::writeB(mbyte value, Addr addr, offset off) {
     return memWrite(&value, BSize, addr, off);
 }
 
-ulong MemoryToolsBase::writeV(void *buff, ulong len, Addr addr, offset off) {
+mulong MemoryToolsBase::writeV(void *buff, mulong len, Addr addr, offset off) {
     return memWrite(buff, len, addr, off);
 }
 
@@ -258,7 +266,7 @@ int MemoryToolsBase::searchDword(int from_value, int to_value) {
         position = (int)(len / max * 100.0F);
         printf("[%d%%][%c]\r", position, *(proText + (position % 4)));
         for (int j = 0; j < c; j += 1) {
-            memRead(buff, memPageSize, pmapsit->addr, j * memPageSize);
+            mulong u =memRead(buff, memPageSize, pmapsit->addr, j * memPageSize);
             for (int i = 0; i < buffSize; i += 1) {
                 if (buff[i] >= from_value && buff[i] <= to_value) {
                     cs += 1;
@@ -560,7 +568,7 @@ int MemoryToolsBase::rangeMemorySearch(std::string from_value, std::string to_va
     return cs;
 }
 
-int MemoryToolsBase::searchOffset(const mbyte *from_value, const mbyte *to_value, ulong offset, Type type, ulong len) {
+int MemoryToolsBase::searchOffset(const mbyte *from_value, const mbyte *to_value, mulong offset, Type type, mulong len) {
     int cs = 0;
     auto *offList = new std::list<RADDR>;
     RADDR maps{0, 0};
@@ -618,7 +626,7 @@ int MemoryToolsBase::searchOffset(const mbyte *from_value, const mbyte *to_value
     return cs;
 }
 
-int MemoryToolsBase::memoryOffset(std::string value, ulong offset, Type type) {
+int MemoryToolsBase::memoryOffset(std::string value, mulong offset, Type type) {
     mbyte *buff = nullptr;
     int cs = 0;
     if (type == MEM_DWORD) {
@@ -651,7 +659,7 @@ int MemoryToolsBase::memoryOffset(std::string value, ulong offset, Type type) {
     return cs;
 }
 
-int MemoryToolsBase::rangeMemoryOffset(std::string from_value, std::string to_value, ulong offset, Type type) {
+int MemoryToolsBase::rangeMemoryOffset(std::string from_value, std::string to_value, mulong offset, Type type) {
     mbyte *fbuff = nullptr;
     mbyte *tbuff = nullptr;
     int cs = 0;
@@ -702,7 +710,7 @@ int MemoryToolsBase::rangeMemoryOffset(std::string from_value, std::string to_va
 }
 
 
-void MemoryToolsBase::memoryWrite(std::string value, ulong offset, Type type) {
+void MemoryToolsBase::memoryWrite(std::string value, mulong offset, Type type) {
     mbyte *buff = nullptr;
     int len = 0;
     if (type == MEM_DWORD) {
@@ -744,18 +752,18 @@ void MemoryToolsBase::memoryWrite(std::string value, ulong offset, Type type) {
 }
 
 
-ulong MemoryToolsBase::dumpMem(Addr beginAddr, Addr endAddr, FILE *dumpfile) {
+mulong MemoryToolsBase::dumpMem(Addr beginAddr, Addr endAddr, FILE *dumpfile) {
     if (endAddr - beginAddr <= 0) {
         return 0;
     }
     const int buffSize = 1024 * 1024 * 2;
     auto *fileBuff = new mbyte[buffSize];
     Addr baseAddress = beginAddr;
-    ulong baseSize = endAddr - beginAddr;
+    mulong baseSize = endAddr - beginAddr;
     offset off = 0;
-    ulong total = 0;
+    mulong total = 0;
     while (baseSize > 0) {
-        ulong size = (std::min)(baseSize, (ulong)buffSize);
+        mulong size = (std::min)(baseSize, (mulong)buffSize);
         readV(fileBuff, buffSize, baseAddress, off);
         fwrite(fileBuff, 1, size, dumpfile);
         baseSize -= size;
@@ -766,16 +774,16 @@ ulong MemoryToolsBase::dumpMem(Addr beginAddr, Addr endAddr, FILE *dumpfile) {
     return total;
 }
 
-ulong MemoryToolsBase::dumpMem(std::string dumpModule, std::string filePath) {
+mulong MemoryToolsBase::dumpMem(std::string dumpModule, std::string filePath) {
     const int buffSize = 1024 * 1024 * 2;
     auto *fileBuff = new mbyte[buffSize];
     FILE *p = fopen(filePath.c_str(), "wb");
-    ulong total = 0;
+    mulong total = 0;
     Addr baseAddress = getModuleAddr(dumpModule);
-    ulong baseSize = getModuleSize(dumpModule);
+    mulong baseSize = getModuleSize(dumpModule);
     offset off = 0;
     while (baseSize > 0) {
-        ulong size = (std::min)(baseSize, (ulong)buffSize);
+        mulong size = (std::min)(baseSize, (mulong)buffSize);
         readV(fileBuff, buffSize, baseAddress, off);
         fwrite(fileBuff, 1, size, p);
         total += size;
@@ -787,13 +795,13 @@ ulong MemoryToolsBase::dumpMem(std::string dumpModule, std::string filePath) {
     return total;
 }
 
-ulong MemoryToolsBase::dumpAllMem(const std::string &dirPath) {
+mulong MemoryToolsBase::dumpAllMem(const std::string &dirPath) {
     std::filesystem::path path(dirPath);
     if (!exists(path)) {
         printf("No such directory: %s\n", path.string().c_str());
         return 0;
     }
-    ulong total = 0;
+    mulong total = 0;
     std::string dictTxtPath = dirPath + "/dict.txt";
     FILE *dictTxt = fopen(dictTxtPath.c_str(), "wb");
     std::vector<RADDR> modules;
@@ -812,7 +820,7 @@ ulong MemoryToolsBase::dumpAllMem(const std::string &dirPath) {
         addrToHex(memoryMapOff) + "\n";
         fwrite(outStr.data(), 1, outStr.size(), dictTxt);
         modules.push_back({mModule.baseAddress, mModule.baseAddress + mModule.baseSize});
-        ulong size = dumpMem(mModule.baseAddress, mModule.baseAddress + mModule.baseSize, m);
+        mulong size = dumpMem(mModule.baseAddress, mModule.baseAddress + mModule.baseSize, m);
         if (size == 0) {
             total = 0;
             break;
@@ -844,7 +852,7 @@ ulong MemoryToolsBase::dumpAllMem(const std::string &dirPath) {
         std::string baseAddressStr = addrToHex(baseAddress) + "|" + addrToHex(baseAddress + baseSize);
         std::string outStr = "p|p|" + baseAddressStr + "|" + addrToHex(memoryMapOff) + "\n";
         fwrite(outStr.data(), 1, outStr.size(), dictTxt);
-        ulong size = dumpMem(baseAddress, baseAddress + baseSize, p);
+        mulong size = dumpMem(baseAddress, baseAddress + baseSize, p);
         if (size == 0) {
             total = 0;
             break;

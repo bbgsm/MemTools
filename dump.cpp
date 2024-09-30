@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     }
     Addr baseAddr = mem.getBaseAddr();
     printf("baseAddr: %llX\n", baseAddr);
-    ulong size = mem.dumpAllMem(argv[2]);
+    mulong size = mem.dumpAllMem(argv[2]);
     printf("dump size: %lu\n", size);
     return 0;
 }
