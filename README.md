@@ -10,6 +10,9 @@ Windows、Linux DMA、Dump 、Direct 内存工具
 编译环境: Clion + cmake + vs2022, 在 Clion 的 cmake 配置中选择vs2022编译工具链进行编译
 - Linux
 编译环境: Clion + cmake + Unix Makefiles, 在 Clion 的 cmake 配置中选择Unix Makefiles编译工具
+- 注意:
+<br/>Linux 下还需要需要把 [vmm.so] [leechcore.so] [leechcore_ft601_driver_linux.so] 三个库文件复制到/usr/lib64/下
+并且用root权限执行
 # 测试环境
 #### Windows
 - Windows 11 + vs2022
