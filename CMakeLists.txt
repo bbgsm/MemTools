@@ -8,8 +8,6 @@ elseif (WIN32) # Windows MSVC参数
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif ()
 
-link_directories(${CMAKE_SOURCE_DIR}/dmaLibs/linuxArm64)
-
 set(CMAKE_CXX_STANDARD 20)
 
 if (UNIX) # Linux
@@ -58,7 +56,12 @@ add_executable(dumpMem
 )
 
 if (UNIX)
-#    find_library(VMM_LIBRARY NAMES vmm PATHS ${CMAKE_SOURCE_DIR}/dmaLibs/linuxArm64)
+    # vmm.so
+    add_library(vmm SHARED IMPORTED)
+    set_target_properties(vmm PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/dmaLibs/linuxArm64/vmm.so)
+    # leechcore.so
+    add_library(leechcore SHARED IMPORTED)
+    set_target_properties(leechcore PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/dmaLibs/linuxArm64/leechcore.so)
 
     # DMA 工具需要的依赖
     target_link_libraries(dmaMemTools
