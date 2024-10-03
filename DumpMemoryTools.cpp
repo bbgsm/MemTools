@@ -1,24 +1,9 @@
 #include "DumpMemoryTools.h"
-
-#include <algorithm>
-#include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <mutex>
-#include <ranges>
 #include <sstream>
 #include <string>
 #include <vector>
-
-std::vector<MemoryFile> allMemory; // 所有内存
-
-inline FILE *pteFile = nullptr;
-inline FILE *moduleFile = nullptr;
-std::mutex dumpMtx;                         // 全局互斥锁
-inline std::vector<PProcess> dumpProcesses; // 可用dump进程文件列表
-namespace fs = std::filesystem;
-std::string ptePath;
-std::string modulePath;
 
 // 分割字符串到list
 std::vector<std::string> splitString(const std::string &str, char delimiter) {
@@ -99,7 +84,7 @@ void DumpMemoryTools::parseFile(const std::string &filePath) {
 }
 
 // 读取可用内存
-mulong readAvailableMemory(Addr addr, void *buff, mulong size) {
+mulong DumpMemoryTools::readAvailableMemory(Addr addr, void *buff, mulong size) {
     for (const auto &memory : allMemory) {
         if (addr >= memory.baseAddress && addr <= memory.endAddress) {
             const mulong minSize = (std::min)(size, memory.size);
@@ -144,7 +129,7 @@ mulong readAvailableMemory(Addr addr, void *buff, mulong size) {
 }
 
 // 往可用内存写入数据
-mulong writeAvailableMemory(Addr addr, void *buff, mulong size) {
+mulong DumpMemoryTools::writeAvailableMemory(Addr addr, void *buff, mulong size) {
     for (const auto &memory : allMemory) {
         if (addr >= memory.baseAddress && addr <= memory.endAddress) {
             const mulong minSize = (std::min)(size, memory.size);
