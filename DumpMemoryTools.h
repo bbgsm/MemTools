@@ -1,9 +1,16 @@
 #pragma once
+#include <mutex>
 #include <string>
 #include <vector>
 #include "MemoryToolsBase.h"
 #include "Type.h"
 
+#include <algorithm>
+#include <cstring>
+#include <filesystem>
+#include <ranges>
+
+namespace fs = std::filesystem;
 
 struct MemoryFile {
     char name[MAX_PATH] = {0};
@@ -17,22 +24,35 @@ struct MemoryFile {
 // 读取/写入Dump的内存
 class DumpMemoryTools : public MemoryToolsBase {
 private:
-    mulong memRead(void *buff, mulong len, Addr addr, offset off) override;
+    std::vector<MemoryFile> allMemory; // 所有内存
+    FILE *pteFile = nullptr;
+    FILE *moduleFile = nullptr;
+    std::mutex dumpMtx;                  // 全局互斥锁
+    std::vector<PProcess> dumpProcesses; // 可用dump进程文件列表
 
+    std::string ptePath;
+    std::string modulePath;
+private:
+    mulong readAvailableMemory(Addr addr, void *buff, mulong size);
+    mulong writeAvailableMemory(Addr addr, void *buff, mulong size);
+
+private:
+    mulong memRead(void *buff, mulong len, Addr addr, offset off) override;
     mulong memWrite(void *buff, mulong len, Addr addr, offset off) override;
 
 public:
     ~DumpMemoryTools() override;
 
     void parseProcessInfo(const std::string &line); // 解析进程信息
-    void parseFile(const std::string &filePath); // 解析dump内存结构
+    void parseFile(const std::string &filePath);    // 解析dump内存结构
 
     DumpMemoryTools();
 
 
     void initModuleRegions() override;
     void initMemoryRegions() override;
-    bool init(std::string bm) override; // 传入路径为文件夹，加载文件夹下dump的数据列表，传入dump结构文件地址，直接加载dump的内存
+    bool init(
+    std::string bm) override; // 传入路径为文件夹，加载文件夹下dump的数据列表，传入dump结构文件地址，直接加载dump的内存
     void close() override;
 
     int getPID(std::string bm) override; // 获取pid
