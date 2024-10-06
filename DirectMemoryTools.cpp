@@ -212,8 +212,8 @@ mulong DirectMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off
     iov_WriteOffset.iov_base = (void *) (addr + off);
     iov_WriteOffset.iov_len = len;
     // 大小
-     long int size =  syscall(SYS_process_vm_writev, processID, &iov_WriteBuffer, 1, &iov_WriteOffset, 1, 0);
-     return size == -1 ? 0 : size;
+    long int size = syscall(SYS_process_vm_writev, processID, &iov_WriteBuffer, 1, &iov_WriteOffset, 1, 0);
+    return size == -1 ? 0 : size;
 }
 
 DirectMemoryTools::~DirectMemoryTools() {

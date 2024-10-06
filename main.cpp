@@ -64,11 +64,14 @@ void dump(){
     }
 }
 
-int main() {
-
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Params num failed\n");
+        return -1;
+    }
     // // 直接读取本机应用内存
     memoryTools = new DirectMemoryTools();
-    if (!memoryTools->init("test")) {
+    if (!memoryTools->init(argv[1])) {
        printf("Failed to initialize MemoryTools\n");
     }
 
