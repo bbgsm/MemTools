@@ -173,6 +173,19 @@ void DirectMemoryTools::closeScatterHandle(Handle handle) {
 pid_t hProcess;
 
 
+
+std::string trimAndGetModuleName(const std::string& str) {
+    size_t first = str.find_first_not_of(' ');
+    if (first == std::string::npos) return ""; // No content
+    size_t last = str.find_last_not_of(' ');
+    std::string trimmed = str.substr(first, (last - first + 1));
+    size_t lastSlash = trimmed.find_last_of('/');
+    if (lastSlash != std::string::npos) {
+        return trimmed.substr(lastSlash + 1);
+    }
+    return trimmed;
+}
+
 mulong DirectMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
     memset(buff, 0, len);
     Addr lastAddr = addr + off;
@@ -277,36 +290,45 @@ void DirectMemoryTools::initModuleRegions() {
     std::ifstream maps_file(maps_path);
     std::string line;
     while (std::getline(maps_file, line)) {
-        std::istringstream iss(line);
         Addr start, end;
-        char dash;
-        iss >> std::hex >> start >> dash >> end;
-        std::string perms;
-        iss >> perms;
-        if (perms.find('r') != std::string::npos) {
+        std::istringstream lineStream(line);
+        std::string addresses, permissions, offset, dev, inode, moduleName;
+        lineStream >> addresses >> permissions >> offset >> dev >> inode;
+        std::getline(lineStream, moduleName);
+        std::istringstream addressStream(addresses);
+        std::string startAddressStr, endAddressStr;
+        std::getline(addressStream, startAddressStr, '-');
+        std::getline(addressStream, endAddressStr, '-');
+        start = std::stoul(startAddressStr, nullptr, 16);
+        end = std::stoul(endAddressStr, nullptr, 16);
+        if(!moduleName.empty()) {
+            moduleName = trimAndGetModuleName(moduleName);
+        }
+        if (permissions.find('r') != std::string::npos) {
             MModule mModule;
             mModule.baseAddress = start;
             mModule.baseSize = end - start;
+            strcpy(mModule.moduleName,moduleName.c_str());
             moduleRegions.push_back(mModule);
         }
     }
 }
 
 void DirectMemoryTools::initMemoryRegions() {
-    std::string maps_path = std::string("/proc/") + std::to_string(hProcess) + "/maps";
-    std::ifstream maps_file(maps_path);
-    std::string line;
-    while (std::getline(maps_file, line)) {
-        std::istringstream iss(line);
-        Addr start, end;
-        char dash;
-        iss >> std::hex >> start >> dash >> end;
-        std::string perms;
-        iss >> perms;
-        if (perms.find('r') != std::string::npos) {
-            memoryRegions.push_back({"", start, end - start});
-        }
-    }
+    // std::string maps_path = std::string("/proc/") + std::to_string(hProcess) + "/maps";
+    // std::ifstream maps_file(maps_path);
+    // std::string line;
+    // while (std::getline(maps_file, line)) {
+    //     std::istringstream iss(line);
+    //     Addr start, end;
+    //     char dash;
+    //     iss >> std::hex >> start >> dash >> end;
+    //     std::string perms;
+    //     iss >> perms;
+    //     if (perms.find('r') != std::string::npos) {
+    //         memoryRegions.push_back({"", start, end - start});
+    //     }
+    // }
 }
 
 Handle DirectMemoryTools::createScatter() {
