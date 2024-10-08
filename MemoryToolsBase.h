@@ -80,32 +80,32 @@ public:
 protected:
     MemoryToolsBase();
 
+    /******** 子类必须实现的方法 *********/
 private:
     virtual mulong memRead(void *buff, mulong len, Addr addr, offset off) = 0; // 读取内存
-
     virtual mulong memWrite(void *buff, mulong len, Addr addr, offset off) = 0; // 写入内存
-
 public:
-    /******** 子类必须实现的方法 *********/
     virtual void initModuleRegions() = 0;  // 初始化模块内存区域
     virtual void initMemoryRegions() = 0;  // 初始化内存区域
     virtual int getPID(std::string bm) = 0; // 获取pid
     virtual bool init(std::string bm) = 0;  // 初始化工具
     virtual void close() = 0;               // 关闭工具
     virtual Handle createScatter() = 0;     // 创建分散读取handle
-    virtual void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off = 0) = 0; // 新增分散读取
+    virtual void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr) = 0;             // 新增分散读取
+    virtual void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) = 0; // 新增分散读取
     virtual void executeReadScatter(Handle handle) = 0;  // 执行分散读取
     virtual void closeScatterHandle(Handle handle) = 0;  // 关闭分散读取
+    virtual void execAndCloseScatterHandle(Handle handle) = 0;  // 执行并关闭分散读取
     virtual std::vector<PProcess> getProcessList() = 0;  // 获取进程列表
     virtual ~MemoryToolsBase();
     /******** 子类必须实现的方法 *********/
 
-    void init();                             // 初始化(子类初始化时也调用一下它)
+    void init(); // 初始化(子类初始化时也调用一下它)
     void setPID(int pid);
 
-    MModule getModule(std::string modName);  // 获取模块信息
-    Addr getModuleAddr(std::string modName); // 获取模块地址
-    mulong getModuleSize(std::string modName);// 获取模块大小
+    MModule getModule(const std::string &modName);  // 获取模块信息
+    Addr getModuleAddr(const std::string &modName); // 获取模块地址
+    mulong getModuleSize(const std::string &modName);// 获取模块大小
 
     int readI(Addr addr, offset off = 0);     // 读取int(4位)
     int16 readI16(Addr addr, offset off = 0); // 读取int16
@@ -129,30 +129,30 @@ public:
     mulong writeB(mbyte value, Addr addr, offset off = 0);  // 写入byte
     mulong writeV(void *buff, mulong len, Addr addr, offset off = 0); // 写入buffer
 
-    Addr getPointers(Addr addr, int p_size, int *offsets);    // 获取多级偏移地址
+    Addr getPointers(Addr addr, int p_size, int *offsets);                                // 获取多级偏移地址
     int getPointersValue(Addr addr, void *buff, mulong len, int p_size, mulong *offsets); // 获取多级偏移值
 
     static bool isAddrValid(Addr addr); // 判断内存地址是否有效
 
     /********** 搜索内存功能 ***************/
-    void addSearchModule(std::string modName);         // 新增模块搜索范围
+    void addSearchModule(const std::string &modName);         // 新增模块搜索范围
     void setSearchAll();                               // 设置搜索所有
     void addSearchRang(Addr startAddr, Addr endAddr);  // 手动添加搜索范围
 
-    int searchFloat(float from_value, float to_value);
-    int searchDword(int from_value, int to_value);
-    int searchQword(mlong from_value, mlong to_value);
-    int searchDouble(double from_value, double to_value);
-    int searchByte(mbyte from_value, mbyte to_value);
-    int searchBytes(std::string values);
+    int searchFloat(float fromValue, float toValue);
+    int searchDword(int fromValue, int toValue);
+    int searchQword(mlong fromValue, mlong toValue);
+    int searchDouble(double fromValue, double toValue);
+    int searchByte(mbyte fromValue, mbyte toValue);
+    int searchBytes(const std::string &values);
     int searchString(const std::string &values);
-    int searchOffset(const mbyte *from_value, const mbyte *to_value, mulong offset, Type type, mulong len);
+    int searchOffset(const mbyte *fromValue, const mbyte *toValue, mulong offset, Type type, mulong len);
 
-    int memorySearch(std::string value, Type type); // 类型搜索
-    int memoryOffset(std::string value, mulong offset, Type type); // 搜索偏移
-    int rangeMemorySearch(std::string from_value, std::string to_value, Type type); // 范围搜索
-    int rangeMemoryOffset(std::string from_value, std::string to_value, mulong offset, Type type); // 范围偏移
-    void memoryWrite(std::string value, mulong offset, Type type); // 批量往搜索结果写入数据
+    int memorySearch(const std::string &value, Type type); // 类型搜索
+    int memoryOffset(const std::string &value, mulong offset, Type type); // 搜索偏移
+    int rangeMemorySearch(const std::string &fromValue, const std::string &toValue, Type type); // 范围搜索
+    int rangeMemoryOffset(const std::string &fromValue, const std::string &toValue, mulong offset, Type type); // 范围偏移
+    void memoryWrite(const std::string &value, mulong offset, Type type); // 批量往搜索结果写入数据
 
     void printResult() const;       // 打印搜索结果
     void printSearchRange() const;  // 打印搜索范围

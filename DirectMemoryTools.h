@@ -30,9 +30,11 @@ public:
     int getPID(std::string bm) override; // 获取pid
 
     Handle createScatter() override;
-    void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off = 0) override;
+    void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr) override;
+    void addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) override;
     void executeReadScatter(Handle handle) override;
     void closeScatterHandle(Handle handle) override;
+    void execAndCloseScatterHandle(Handle handle) override;
 };
 
 
