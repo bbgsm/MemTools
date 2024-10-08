@@ -141,6 +141,10 @@ Handle DirectMemoryTools::createScatter() {
     return nullptr;
 }
 
+void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr){
+    readV(buff, len, addr);
+}
+
 void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
     readV(buff, len, addr, off);
 }
@@ -149,6 +153,9 @@ void DirectMemoryTools::executeReadScatter(Handle handle) {
 }
 
 void DirectMemoryTools::closeScatterHandle(Handle handle) {
+}
+
+void DirectMemoryTools::execAndCloseScatterHandle(Handle handle){
 }
 
 #else // Linux
@@ -335,6 +342,10 @@ Handle DirectMemoryTools::createScatter() {
     return nullptr;
 }
 
+void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr){
+    readV(buff, len, addr);
+}
+
 void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
     readV(buff, len, addr, off);
 }
@@ -343,5 +354,8 @@ void DirectMemoryTools::executeReadScatter(Handle handle) {
 }
 
 void DirectMemoryTools::closeScatterHandle(Handle handle) {
+}
+
+void DirectMemoryTools::execAndCloseScatterHandle(Handle handle){
 }
 #endif

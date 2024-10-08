@@ -28,7 +28,7 @@ struct Info1 {
     std::string name;
 };
 
-//VMM_HANDLE vHandle;
+// VMM_HANDLE vHandle;
 mulong DmaMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
     if (!isAddrValid(addr)) {
         return 0;
@@ -57,8 +57,8 @@ DmaMemoryTools::~DmaMemoryTools() {
 bool DmaMemoryTools::SetFPGA() {
     ULONG64 qwID = 0, qwVersionMajor = 0, qwVersionMinor = 0;
     if (!VMMDLL_ConfigGet(vHandle, LC_OPT_FPGA_FPGA_ID, &qwID) &&
-        VMMDLL_ConfigGet(vHandle, LC_OPT_FPGA_VERSION_MAJOR, &qwVersionMajor) && VMMDLL_ConfigGet(
-        vHandle, LC_OPT_FPGA_VERSION_MINOR, &qwVersionMinor)) {
+        VMMDLL_ConfigGet(vHandle, LC_OPT_FPGA_VERSION_MAJOR, &qwVersionMajor) &&
+        VMMDLL_ConfigGet(vHandle, LC_OPT_FPGA_VERSION_MINOR, &qwVersionMinor)) {
         logDebug("[!] Failed to lookup FPGA device, Attempting to proceed\n\n");
         return false;
     }
@@ -94,7 +94,7 @@ bool DmaMemoryTools::FixCr3() {
     while (true) {
         BYTE bytes[4] = {0};
         DWORD i = 0;
-        auto nt = VMMDLL_VfsReadU(vHandle, "\\misc\\procinfo\\progress_percent.txt", bytes, 3, &i,0);
+        auto nt = VMMDLL_VfsReadU(vHandle, "\\misc\\procinfo\\progress_percent.txt", bytes, 3, &i, 0);
         if (nt == VMMDLL_STATUS_SUCCESS && atoi(reinterpret_cast<LPSTR>(bytes)) == 100) break;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -113,8 +113,7 @@ bool DmaMemoryTools::FixCr3() {
     const size_t buffer_size = cbSize1;
     std::unique_ptr<BYTE[]> bytes(new BYTE[buffer_size]);
     DWORD j = 0;
-    auto nt = VMMDLL_VfsReadU(vHandle, "\\misc\\procinfo\\dtb.txt", bytes.get(), buffer_size - 1,
-                              &j, 0);
+    auto nt = VMMDLL_VfsReadU(vHandle, "\\misc\\procinfo\\dtb.txt", bytes.get(), buffer_size - 1, &j, 0);
     if (nt != VMMDLL_STATUS_SUCCESS) return false;
 
     std::vector<uint64_t> possible_dtbs = {};
@@ -125,8 +124,8 @@ bool DmaMemoryTools::FixCr3() {
     while (std::getline(iss, line)) {
         Info1 info = {};
         std::istringstream info_ss(line);
-        if (info_ss >> std::hex >> info.index >> std::dec >> info.process_id >> std::hex >> info.dtb >> info.kernelAddr
-            >> info.name) {
+        if (info_ss >> std::hex >> info.index >> std::dec >> info.process_id >> std::hex >> info.dtb >>
+            info.kernelAddr >> info.name) {
             if (info.process_id == 0) // parts that lack a name or have a NULL pid are suspects
                 possible_dtbs.push_back(info.dtb);
             if (processName.find(info.name) != std::string::npos) possible_dtbs.push_back(info.dtb);
@@ -150,9 +149,10 @@ bool DmaMemoryTools::init(std::string bm) {
     MemoryToolsBase::init();
     if (!initialized) {
         logDebug("inizializing...\n");
-    reinit: LPCSTR args[] = {const_cast<LPCSTR>(""), const_cast<LPCSTR>("-device"), const_cast<LPCSTR>("fpga://algo=0"),
-                             const_cast<LPCSTR>(""), const_cast<LPCSTR>(""), const_cast<LPCSTR>(""),
-                             const_cast<LPCSTR>("")};
+    reinit:
+        LPCSTR args[] = {const_cast<LPCSTR>(""), const_cast<LPCSTR>("-device"), const_cast<LPCSTR>("fpga://algo=0"),
+                         const_cast<LPCSTR>(""), const_cast<LPCSTR>(""),        const_cast<LPCSTR>(""),
+                         const_cast<LPCSTR>("")};
         DWORD argc = 3;
         if (DMA_DEBUG) {
             args[argc++] = const_cast<LPCSTR>("-v");
@@ -176,7 +176,8 @@ bool DmaMemoryTools::init(std::string bm) {
             return false;
         }
         initialized = true;
-    } else logDebug("DMA already initialized!\n");
+    } else
+        logDebug("DMA already initialized!\n");
     if (processInitialized) {
         logDebug("Process already initialized!\n");
         return true;
@@ -187,8 +188,10 @@ bool DmaMemoryTools::init(std::string bm) {
         return false;
     }
     processName = bm;
-    if (!FixCr3()) std::cout << "Failed to fix CR3" << std::endl;
-    else std::cout << "CR3 fixed" << std::endl;
+    if (!FixCr3())
+        std::cout << "Failed to fix CR3" << std::endl;
+    else
+        std::cout << "CR3 fixed" << std::endl;
     initModuleRegions();
     initMemoryRegions();
     baseModule = getModule(bm);
@@ -204,8 +207,7 @@ bool DmaMemoryTools::init(std::string bm) {
     return true;
 }
 
-void DmaMemoryTools::close()
-{
+void DmaMemoryTools::close() {
     VMMDLL_Close(vHandle);
 }
 
@@ -269,8 +271,8 @@ void DmaMemoryTools::initMemoryRegions() {
         Addr baseSize = memMapEntry->cPages * memPageSize;
         bool isModuleRegion = false;
         for (auto &module : moduleRegions) {
-            if (baseAddress >= module.baseAddress && (baseAddress + baseSize) <= (module.baseAddress + module.
-                baseSize)) {
+            if (baseAddress >= module.baseAddress &&
+                (baseAddress + baseSize) <= (module.baseAddress + module.baseSize)) {
                 isModuleRegion = true;
                 break;
             }
@@ -286,6 +288,12 @@ Handle DmaMemoryTools::createScatter() {
     const VMMDLL_SCATTER_HANDLE ScatterHandle = VMMDLL_Scatter_Initialize(vHandle, processID, VMMDLL_FLAG_NOCACHE);
     if (!ScatterHandle) logDebug("[!] Failed to create scatter handle\n");
     return ScatterHandle;
+}
+
+void DmaMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr) {
+    if (!VMMDLL_Scatter_PrepareEx(handle, addr, len, static_cast<PBYTE>(buff), NULL)) {
+        logDebug("[!] Failed to prepare scatter read at 0x%p\n", addr);
+    }
 }
 
 void DmaMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
@@ -305,5 +313,16 @@ void DmaMemoryTools::executeReadScatter(Handle handle) {
 }
 
 void DmaMemoryTools::closeScatterHandle(Handle handle) {
+    VMMDLL_Scatter_CloseHandle(handle);
+}
+
+void DmaMemoryTools::execAndCloseScatterHandle(Handle handle) {
+    if (!VMMDLL_Scatter_ExecuteRead(handle)) {
+        logDebug("[-] Failed to Execute Scatter Read\n");
+    }
+    // Clear after using it
+    if (!VMMDLL_Scatter_Clear(handle, processID, VMMDLL_FLAG_NOCACHE)) {
+        logDebug("[-] Failed to clear Scatter\n");
+    }
     VMMDLL_Scatter_CloseHandle(handle);
 }

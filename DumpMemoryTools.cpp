@@ -293,6 +293,10 @@ Handle DumpMemoryTools::createScatter() {
     return nullptr;
 }
 
+void DumpMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr) {
+    readV(buff, len, addr);
+}
+
 void DumpMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr, offset off) {
     readV(buff, len, addr, off);
 }
@@ -301,4 +305,9 @@ void DumpMemoryTools::executeReadScatter(Handle handle) {
 }
 
 void DumpMemoryTools::closeScatterHandle(Handle handle) {
+
+}
+
+void DumpMemoryTools::execAndCloseScatterHandle(Handle handle){
+
 }
