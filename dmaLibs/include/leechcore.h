@@ -43,7 +43,8 @@ typedef void                                VOID, *PVOID, *HANDLE, **PHANDLE, *H
 typedef long long unsigned int              QWORD, *PQWORD, ULONG64, *PULONG64;
 typedef size_t                              SIZE_T, *PSIZE_T;
 typedef uint64_t                            FILETIME, *PFILETIME;
-typedef uint32_t                            DWORD, *PDWORD, *LPDWORD, BOOL, *PBOOL, NTSTATUS;
+typedef uint32_t                            DWORD, *PDWORD, *LPDWORD, *PBOOL, NTSTATUS;
+typedef int                                 BOOL;
 typedef uint16_t                            WORD, *PWORD;
 typedef uint8_t                             BYTE, *PBYTE, *LPBYTE, UCHAR;
 typedef char                                CHAR, *PCHAR, *LPSTR;
