@@ -39,15 +39,15 @@ mulong DmaMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
         logDebug("[!] Failed to read Memory at 0x%p\n", addr + off);
         return false;
     }
-    return (read_size == len);
+    return read_size;
 }
 
 mulong DmaMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off) {
     if (!VMMDLL_MemWrite(vHandle, processID, addr + off, static_cast<PBYTE>(buff), len)) {
         logDebug("[!] Failed to write Memory at 0x%p\n", addr + off);
-        return false;
+        return len;
     }
-    return true;
+    return len;
 }
 
 DmaMemoryTools::~DmaMemoryTools() {
