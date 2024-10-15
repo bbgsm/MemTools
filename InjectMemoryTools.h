@@ -18,7 +18,7 @@ public:
     ~InjectMemoryTools() override;
 
     InjectMemoryTools();
-
+    // 注入进程名判断，不限制传空字符
     bool init(std::string bm) override;
     void close() override;
     std::vector<PProcess> getProcessList() override;

@@ -14,8 +14,6 @@
 #include <TlHelp32.h>
 #include <mutex>
 
-#define DMA_DEBUG false
-
 
 HANDLE chProcess;
 std::mutex mMtx; // 全局互斥锁
@@ -83,6 +81,9 @@ bool InjectMemoryTools::init(std::string bm) {
     if (hModule != nullptr) {
         GetModuleBaseName(chProcess, hModule, szProcessName, sizeof(szProcessName) / sizeof(TCHAR));
         processName = szProcessName;
+        if(!bm.empty() && bm != processName) {
+            return false;
+        }
     }
     initModuleRegions();
     initMemoryRegions();

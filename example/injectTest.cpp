@@ -12,16 +12,18 @@
 MemoryToolsBase *memoryTools;
 
 void injectDll() {
+
+    // 注入读取内存工具
+    memoryTools = new InjectMemoryTools();
+    if (!memoryTools->init("test.exe")) {
+        return;
+    }
     AllocConsole();
     freopen("conin$", "r", stdin);
     freopen("conout$", "w", stdout);
     freopen("conout$", "w", stderr);
     freopen("conout$", "w+t", stdout);
     freopen("conin$", "r+t", stdin);
-
-    // 注入读取内存工具
-    memoryTools = new InjectMemoryTools();
-    memoryTools->init("");
 
     // 设置搜索所有内存区域
     memoryTools->setSearchAll();
@@ -34,7 +36,7 @@ void injectDll() {
     // 清除搜索结果
     memoryTools->clearResults();
 
-    delete memoryTools;
+    // delete memoryTools;
 }
 
 /**
