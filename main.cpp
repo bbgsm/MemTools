@@ -18,6 +18,7 @@ void search(){
     memoryTools->memorySearch("100", MemoryToolsBase::MEM_DWORD);
     // 打印搜索结果
     memoryTools->printResult();
+    logInfo("Result Count: %d\n",memoryTools->getResCount());
     // 清除搜索结果
     memoryTools->clearResults();
 
@@ -25,6 +26,7 @@ void search(){
     memoryTools->memorySearch("FF 00 65 5D ?? ?? 22 33", MemoryToolsBase::MEM_BYTES);
     // 打印搜索结果
     memoryTools->printResult();
+    logInfo("Result Count: %d\n",memoryTools->getResCount());
     // 清除搜索结果
     memoryTools->clearResults();
 
@@ -32,6 +34,7 @@ void search(){
     memoryTools->memorySearch("this is test string", MemoryToolsBase::MEM_STRING);
     // 打印搜索结果
     memoryTools->printResult();
+    logInfo("Result Count: %d\n",memoryTools->getResCount());
     // 清除搜索结果
     memoryTools->clearResults();
 

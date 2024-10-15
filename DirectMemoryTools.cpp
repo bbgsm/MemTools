@@ -15,11 +15,36 @@
 HANDLE hProcess;
 
 mulong DirectMemoryTools::memRead(void *buff, mulong len, Addr addr, offset off) {
-    return ReadProcessMemory(hProcess, (LPVOID)(addr + off), buff, len, nullptr);
+    if (buff == nullptr || len == 0) return 0;
+    // 检查内存是否有效再读取
+    MEMORY_BASIC_INFORMATION mbi;
+    if (VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(addr + off), &mbi, sizeof(mbi))) {
+        if (mbi.State == MEM_COMMIT && (mbi.Protect & (
+                                            PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ |
+                                            PAGE_EXECUTE_READWRITE))) {
+            return ReadProcessMemory(hProcess, (LPVOID) (addr + off), buff, len, nullptr);
+        } else {
+            logDebug("Error: Memory not writable or not committed\n");
+        }
+    } else {
+        logDebug("Error: VirtualQueryEx failed\n");
+    }
+    return 0;
 }
 
 mulong DirectMemoryTools::memWrite(void *buff, mulong len, Addr addr, offset off) {
-    return WriteProcessMemory(hProcess, (LPVOID)(addr + off), buff, len, nullptr);
+    // 检查内存是否有效再写入
+    MEMORY_BASIC_INFORMATION mbi;
+    if (VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(addr + off), &mbi, sizeof(mbi))) {
+        if (mbi.State == MEM_COMMIT && (mbi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) {
+            return WriteProcessMemory(hProcess, (LPVOID) (addr + off), buff, len, nullptr);
+        } else {
+            logDebug("Error: Memory not writable or not committed\n");
+        }
+    } else {
+        logDebug("Error: VirtualQueryEx failed\n");
+    }
+    return 0;
 }
 
 DirectMemoryTools::~DirectMemoryTools() {
@@ -106,7 +131,7 @@ void DirectMemoryTools::initModuleRegions() {
                 continue;
             }
             MModule mModule;
-            mModule.baseAddress = (Addr)modInfo.lpBaseOfDll;
+            mModule.baseAddress = (Addr) modInfo.lpBaseOfDll;
             mModule.baseSize = modInfo.SizeOfImage;
             strcpy(mModule.moduleName, szModName);
             moduleRegions.push_back(mModule);
@@ -121,7 +146,7 @@ void DirectMemoryTools::initMemoryRegions() {
     while (VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(address), &mbi, sizeof(mbi))) {
         bool isModuleRegion = false;
         // 检查该内存区域是否属于任何模块
-        for (const auto &moduleRegion : moduleRegions) {
+        for (const auto &moduleRegion: moduleRegions) {
             if (reinterpret_cast<Addr>(mbi.BaseAddress) >= moduleRegion.baseAddress &&
                 reinterpret_cast<Addr>(mbi.BaseAddress) < moduleRegion.baseAddress + moduleRegion.baseSize) {
                 isModuleRegion = true;
@@ -130,7 +155,7 @@ void DirectMemoryTools::initMemoryRegions() {
         }
         // 如果不属于任何模块，则将其添加到非模块区域列表中
         if (!isModuleRegion && mbi.State == MEM_COMMIT) {
-            memoryRegions.push_back({"", (Addr)mbi.BaseAddress, mbi.RegionSize});
+            memoryRegions.push_back({"", (Addr) mbi.BaseAddress, mbi.RegionSize});
         }
         // 移动到下一个内存区域
         address = reinterpret_cast<Addr>(mbi.BaseAddress) + mbi.RegionSize;
@@ -141,7 +166,7 @@ Handle DirectMemoryTools::createScatter() {
     return nullptr;
 }
 
-void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr){
+void DirectMemoryTools::addScatterReadV(Handle handle, void *buff, mulong len, Addr addr) {
     readV(buff, len, addr);
 }
 
@@ -155,7 +180,7 @@ void DirectMemoryTools::executeReadScatter(Handle handle) {
 void DirectMemoryTools::closeScatterHandle(Handle handle) {
 }
 
-void DirectMemoryTools::execAndCloseScatterHandle(Handle handle){
+void DirectMemoryTools::execAndCloseScatterHandle(Handle handle) {
 }
 
 #else // Linux

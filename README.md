@@ -1,8 +1,9 @@
 # MemTools
-Windows、Linux DMA、Dump 、Direct 内存工具
+Windows、Linux DMA、Dump 、Direct、inject 内存工具
 - [DirectMemoryTools 读取本机内存](DirectMemoryTools.cpp)
 - [DmaMemoryTools 读取Dma内存，只支持DMA读取Windows内存](DmaMemoryTools.cpp)
 - [DumpMemoryTools 读取Dump的内存](DumpMemoryTools.cpp)
+- [InjectMemoryTools 通过注入读取内存](InjectMemoryTools.cpp)
 - [MemoryToolsBase 上面内存工具基类，都继承自它](MemoryToolsBase.cpp)
 
 # 编译

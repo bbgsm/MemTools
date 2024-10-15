@@ -32,6 +32,7 @@ add_library(directMemTools SHARED
         DirectMemoryTools.cpp
         MemoryToolsBase.cpp
 )
+
 # dump内存工具编译
 add_library(dumpMemTools SHARED
         DumpMemoryTools.cpp
@@ -45,11 +46,24 @@ add_executable(test
         DumpMemoryTools.cpp
         DirectMemoryTools.cpp
         MemoryToolsBase.cpp
+        InjectMemoryTools.cpp
+)
+
+# 注入测试代码
+add_executable(injectDLL
+        example/injectDLL.cpp
+)
+
+# 测试代码
+add_library(injectTest SHARED
+        example/injectTest.cpp
+        MemoryToolsBase.cpp
+        InjectMemoryTools.cpp
 )
 
 # dump
 add_executable(dumpMem
-        dump.cpp
+        example/dump.cpp
         #        DirectMemoryTools.cpp
         DmaMemoryTools.cpp
         MemoryToolsBase.cpp
