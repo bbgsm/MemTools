@@ -1,5 +1,4 @@
 #pragma once
-#define  PLATFORM_WINDOWS
 
 typedef signed char mbyte;
 typedef long long mlong;       //long 8
